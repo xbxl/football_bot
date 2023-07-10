@@ -94,30 +94,19 @@ def strategy(football_now_x, football_now_y):
                 for j in range(len(opp_xy_info)):
                     if is_distance_too_close(opp_xy_info[i], base_xy_info[j], distance):
                         # 距离过近 处理逻辑
-                        print(f"自己家的机器人{i+1}和对面机器人{j+1}之间的距离过近！")
+                        print(f"自己家的机器人{i + 1}和对面机器人{j + 1}之间的距离过近！")
                         # 太近则换个位置(只有”i“是自家机器人)
                         # baseRobots[i].set_wheel_velocity(-125, 0)
                         opp_x = opp_xy_info[j][0]
                         opp_y = opp_xy_info[j][1]
-                        baseRobots[i].moveto(opp_x+50, opp_y-60)
+                        baseRobots[i].moveto(opp_x + 50, opp_y - 60)
         # 防守！！！
         if race_state_trigger == Team.Opponent:
             # # baseRobots[0].moveto(football_now_x, football_now_y)  # 这个是足球了啦。
-            #
-            # baseRobots[0].moveto(oppRobots[0].get_pos().x - 5, oppRobots[0].get_pos().y)
-            # baseRobots[1].moveto(oppRobots[1].get_pos().x - 5, oppRobots[1].get_pos().y)
-            # baseRobots[2].moveto(oppRobots[2].get_pos().x - 5, oppRobots[2].get_pos().y)
 
-            # baseRobots[0].moveto(football_now_x, football_now_y)
-            if baseRobots[0].get_distance_from_opponent(oppRobots[0]) < 50:
-                opp1, opp2, opp3 = baseRobots[0].get_distribution_of_opponent(oppRobots[0], oppRobots[1], oppRobots[2])
-                baseRobots[0].moveto(oppRobots[opp1].get_pos().x, oppRobots[opp1].get_pos().y)
-                baseRobots[1].moveto(oppRobots[opp2].get_pos().x, oppRobots[opp2].get_pos().y)
-                baseRobots[2].moveto(oppRobots[opp3].get_pos().x, oppRobots[opp3].get_pos().y)
-            else:
-                baseRobots[0].moveto(-80, -20)
-                baseRobots[1].moveto(-80, 20)
-                baseRobots[2].moveto(-80, 0)
+            baseRobots[0].moveto(oppRobots[0].get_pos().x - 5, oppRobots[0].get_pos().y)
+            baseRobots[1].moveto(oppRobots[1].get_pos().x - 5, oppRobots[1].get_pos().y)
+            baseRobots[2].moveto(oppRobots[2].get_pos().x - 5, oppRobots[2].get_pos().y)
 
     for i in range(0, 5):  # 保存信息
         # baseRobots[i].set_wheel_velocity(125, 125)
