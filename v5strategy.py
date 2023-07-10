@@ -4,11 +4,14 @@ from typing import Tuple, Union
 from V5RPC import *
 from baseRobot import *
 from GlobalVariable import *
-baseRobots = []# 我方机器人数组
-oppRobots = [] # 敌方机器人数组
+
+baseRobots = []  # 我方机器人数组
+oppRobots = []  # 敌方机器人数组
 data_loader = DataLoader()
 race_state = -1  # 定位球状态
-race_state_trigger = -1    # 触发方
+race_state_trigger = -1  # 触发方
+
+
 # 接收比赛状态变化的信息
 
 
@@ -42,6 +45,8 @@ def on_event(event_type: int, args: EventArguments):
         actor[race_state_trigger]()
 
     event[event_type]()
+
+
 # 控制队名。可以在合法合理的范围内把返回值改成任意你喜欢的队名，其他几行不用管
 
 @unbox_int
@@ -53,19 +58,20 @@ def get_team_info(server_version: int) -> str:
     print(f'server rpc version: {version.get(server_version, "V1.0")}')
     return 'Python Strategy Server'
 
+
 def strategy(football_now_x, football_now_y):
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
         if race_state_trigger == Team.Self:
-            #baseRobots[0].set_wheel_velocity(125,125)
-            baseRobots[0].moveto(120, 15)# 进攻状态下分别避障跑位到110，±15
+            # baseRobots[0].set_wheel_velocity(125,125)
+            baseRobots[0].moveto(120, 15)  # 进攻状态下分别避障跑位到110，±15
             baseRobots[1].moveto(120, -15)
-        if race_state_trigger == Team.Opponent:# 防守状态下直接冲对面
+        if race_state_trigger == Team.Opponent:  # 防守状态下直接冲对面
             # baseRobots[0].moveto(football_now_x, football_now_y)
             baseRobots[0].moveto(oppRobots[0].get_pos().x, oppRobots[0].get_pos().y)
             baseRobots[1].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
-            baseRobots[0].set_wheel_velocity(125,125)
-    for i in range(0, 5):#保存信息
-        #baseRobots[i].set_wheel_velocity(125, 125);
+            baseRobots[0].set_wheel_velocity(125, 125)
+    for i in range(0, 5):  # 保存信息
+        # baseRobots[i].set_wheel_velocity(125, 125);
         baseRobots[i].save_last_information(football_now_x, football_now_y)
 
 
@@ -83,14 +89,14 @@ def get_instruction(field: Field):
         oppRobots[i].update(field.opponent_robots[i])
         # print(field.self_robots[i].position)
         # print("baseRobot information: " + str(baseRobots[i].get_pos().x) + "," + str(baseRobots[i].get_pos().y))
-    football_now_x = -field.ball.position.x   # 黄方假设，球坐标取反
+    football_now_x = -field.ball.position.x  # 黄方假设，球坐标取反
     football_now_y = -field.ball.position.y
-    strategy(football_now_x, football_now_y)# 核心策略函数，调用此函数进行进入策略主函数
+    strategy(football_now_x, football_now_y)  # 核心策略函数，调用此函数进行进入策略主函数
     data_loader.set_tick_state(GlobalVariable.tick, race_state)
     velocity_to_set = []
     for i in range(0, 5):
         velocity_to_set.append((baseRobots[i].robot.wheel.left_speed, baseRobots[i].robot.wheel.right_speed))
-    return velocity_to_set, 0    # 以第二元素的(0,1)表明重置开关,1表示重置
+    return velocity_to_set, 0  # 以第二元素的(0,1)表明重置开关,1表示重置
 
 
 @unbox_field
@@ -106,7 +112,7 @@ def get_placement(field: Field) -> List[Tuple[float, float, float]]:
                        [-3, 0, 0],
                        [0.0, 0.0, 0.0]]
             # set_pos = [(-103, 0, 90), (30, 0, 0), (-3, -10, 0), (-3, 10, 0), (-3, 0, 0), (0.0, 0.0, 0.0)]
-        else:   # if race_state_trigger == Team.Opponent:
+        else:  # if race_state_trigger == Team.Opponent:
             print("开球防守摆位")
             set_pos = [[-80, -3.5, 0],
                        [-80, 3.5, 0],
@@ -123,7 +129,7 @@ def get_placement(field: Field) -> List[Tuple[float, float, float]]:
                    [10, -40, -90],
                    [0.0, 0.0, 0.0]]
 
-    for set_pos_s in set_pos:     # 摆位反转
+    for set_pos_s in set_pos:  # 摆位反转
         set_pos_s[0] = -set_pos_s[0]
         set_pos_s[1] = -set_pos_s[1]
         set_pos_s[2] -= 180
