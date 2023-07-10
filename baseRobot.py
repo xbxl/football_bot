@@ -129,6 +129,18 @@ class BaseRobot:
             v_l = -80
         self.set_wheel_velocity(v_l, v_r)
 
+    def get_distance_from_opponent(self, opp_br):
+        self_pos_x = self.get_pos().x
+        self_pos_y = self.get_pos().y
+        opp_pos_x = opp_br.get_pos().x
+        opp_pos_y = opp_br.get_pos().y
+        return math.sqrt(math.pow(self_pos_x - opp_pos_x, 2) + math.pow(self_pos_y - opp_pos_y, 2))
+
+    def get_distribution_of_opponent(self, opp1, opp2, opp3):
+        poses = [opp1.get_pos().y, opp2.get_pos().y, opp3.get_pos().y]
+        poses.sort()
+        return poses[0], poses[1], poses[2]
+
 
 class DataLoader:
     # 获得tick时刻的比赛状态
