@@ -1,7 +1,13 @@
 """
-This is types and helpers for strategies with PyV5Adapter.
+这段代码提供了一些用于策略开发的类型定义和辅助函数。
 """
 from typing import Optional, List
+
+"""
+unbox_field、unbox_event和unbox_int是三个装饰器函数，
+用于处理函数的输入参数，将传入的对象进行拷贝（深拷贝）操作，避免对原始对象的修改。
+这些装饰器函数可以应用于其他函数上，用于处理传入的Field、EventArguments和int类型的参数。
+"""
 
 
 def unbox_field(func):
@@ -33,25 +39,17 @@ def unbox_int(func):
     return unbox_func
 
 
-'''
-定义队伍：
-我方，对方
-一般用于调用各方机器人或判断定位球执行者
-'''
-
-
+# 定义队伍：
+#   我方，对方
+#   一般用于调用各方机器人或判断定位球执行者
 class Team():
     Self = 0
     Opponent = 1
     Nobody = 2
 
 
-'''
-定义一些事件类型：
-判罚结果，比赛开始，比赛暂停，上半场开始，下半场开始，加时开始，5v5比赛的点球大战开始，点球大战比赛开始，突破重围开始
-'''
-
-
+# 定义一些事件类型：
+#   判罚结果，比赛开始，比赛暂停，上半场开始，下半场开始，加时开始，5v5比赛的点球大战开始，点球大战比赛开始，突破重围开始
 class EventType():
     JudgeResult = 0
     MatchStart = 1
@@ -62,19 +60,16 @@ class EventType():
     PenaltyShootoutStart = 6
 
 
+# 定义版本常量(似乎没用)
 class Version():
     V1_0 = 0
     V1_1 = 1
 
 
-'''
-定义一些判罚类型：
-开球，门球，点球，争球
-执行方
-判罚原因
-'''
-
-
+# 定义一些判罚类型：
+#   开球，门球，点球，争球
+#   执行方
+#   判罚原因
 class JudgeResultEvent:
     class ResultType():
         PlaceKick = 0
@@ -147,8 +142,8 @@ class Wheel:
         return new
 
 
-# 定义机器人属性：
-# 坐标，旋转角，轮（速）
+# 定义机器人类：
+#   属性有：坐标，旋转角，轮（速）
 class Robot:
     position: Vector2
     rotation: float
@@ -180,8 +175,8 @@ class Ball:
         return new
 
 
-# 定义环境
-# 我方机器人数组，对方机器人数组，球，当前拍数（每秒66拍）
+# 定义环境类：
+#   我方机器人数组，对方机器人数组，球，当前拍数（每秒66拍）
 class Field:
     self_robots: List[Robot]
     opponent_robots: List[Robot]
