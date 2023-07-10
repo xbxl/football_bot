@@ -72,7 +72,7 @@ class BaseRobot:
 
     # 获取机器人上一拍位置
     def get_last_pos(self):
-        last_pos: Vector2
+        last_pos = Vector2()
         last_pos.x = self.lastRobotX
         last_pos.y = self.lastRobotY
         return last_pos
