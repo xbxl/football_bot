@@ -1,20 +1,22 @@
-import random
+"""
+这段代码实现了一个的策略开发框架
+"""
+# import random
 from typing import Tuple, Union
-
-from V5RPC import *
+# from V5RPC import *
 from baseRobot import *
 from GlobalVariable import *
 
 baseRobots = []  # 我方机器人数组
 oppRobots = []  # 敌方机器人数组
-data_loader = DataLoader()
+data_loader = DataLoader()  # 数据加载器对象哦
 race_state = -1  # 定位球状态
 race_state_trigger = -1  # 触发方
 
 
-# 接收比赛状态变化的信息
-
-
+# 时间处理函数
+#   接收：比赛状态变化的信息
+#   作用：根据事件类型打印相关的状态消息
 @unbox_event
 def on_event(event_type: int, args: EventArguments):
     # 打印当前状态，event表示比赛进入哪一阶段，比如暂停，上半场，下半场等等
@@ -47,8 +49,7 @@ def on_event(event_type: int, args: EventArguments):
     event[event_type]()
 
 
-# 控制队名。可以在合法合理的范围内把返回值改成任意你喜欢的队名，其他几行不用管
-
+# 控制队名
 @unbox_int
 def get_team_info(server_version: int) -> str:
     version = {
@@ -56,9 +57,13 @@ def get_team_info(server_version: int) -> str:
         1: "V1.1"
     }
     print(f'server rpc version: {version.get(server_version, "V1.0")}')
-    return 'Python Strategy Server'
+    # 返回字符串表示队名
+    return 'xbxl'
 
 
+# 策略的核心函数：
+#   接收：当前球的x,y坐标
+#   作用：根据比赛状态(定位球状态+触发方)执行相应的策略
 def strategy(football_now_x, football_now_y):
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
         if race_state_trigger == Team.Self:
@@ -78,6 +83,9 @@ def strategy(football_now_x, football_now_y):
 # python start.py 20001
 
 
+# get_instruction函数，用于获取指令，接收 Field 对象，更新机器人状态
+#   接收：Field 对象
+#   作用：调用“strategy”函数执行策略
 @unbox_field
 def get_instruction(field: Field):
     # python start.py 20000pytprint(field.tick)  # tick从2起始
@@ -99,6 +107,9 @@ def get_instruction(field: Field):
     return velocity_to_set, 0  # 以第二元素的(0,1)表明重置开关,1表示重置
 
 
+# get_placement函数，获取摆位信息：
+#   依据：比赛状态 和 触发方
+#   返回：球的final location(无具体作用)
 @unbox_field
 def get_placement(field: Field) -> List[Tuple[float, float, float]]:
     final_set_pos: List[Union[Tuple[int, int, int], Tuple[float, float, float]]]

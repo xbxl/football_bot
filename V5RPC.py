@@ -39,9 +39,9 @@ def unbox_int(func):
     return unbox_func
 
 
-# 定义队伍：
-#   我方，对方
-#   一般用于调用各方机器人或判断定位球执行者
+# 定义队伍类：
+#   属性：我方，对方
+#   作用：一般用于调用各方机器人或判断定位球执行者
 class Team():
     Self = 0
     Opponent = 1
@@ -49,7 +49,7 @@ class Team():
 
 
 # 定义一些事件类型：
-#   判罚结果，比赛开始，比赛暂停，上半场开始，下半场开始，加时开始，5v5比赛的点球大战开始，点球大战比赛开始，突破重围开始
+#   属性：判罚结果，比赛开始，比赛暂停，上半场开始，下半场开始，加时开始，5v5比赛的点球大战开始，点球大战比赛开始，突破重围开始
 class EventType():
     JudgeResult = 0
     MatchStart = 1
@@ -67,9 +67,9 @@ class Version():
 
 
 # 定义一些判罚类型：
-#   开球，门球，点球，争球
-#   执行方
-#   判罚原因
+#   属性：开球，门球，点球，争球
+#        执行方
+#        判罚原因
 class JudgeResultEvent:
     class ResultType():
         PlaceKick = 0
