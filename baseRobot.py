@@ -100,11 +100,12 @@ class BaseRobot:
     """
 
     # todo 也许上层策略就足矣，看情况决定是否修改
-    def moveto(self, tar_x, tar_y):  # pid跑位函数
+    def moveto(self, tar_x, tar_y, tar_v=125):  # pid跑位函数
         if self.tick == 1 or self.tick == 2 or self.tick == 3 or self.tick % 100 == 0:
             self.lastU = 0
             self.lastU1 = 0
-        v_max = 125
+        v_max = tar_v
+        # v_max = 125
         dx = tar_x - self.get_pos().x
         dy = tar_y - self.get_pos().y
         angle_to = 180 / math.pi * np.arctan2(dy, dx)
@@ -128,7 +129,6 @@ class BaseRobot:
             v_r = 80
             v_l = -80
         self.set_wheel_velocity(v_l, v_r)
-
 
 
 class DataLoader:
