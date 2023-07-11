@@ -6,6 +6,7 @@ from typing import Tuple, Union
 # from V5RPC import *
 from baseRobot import *
 from GlobalVariable import *
+import math
 
 baseRobots = []  # 我方机器人数组
 oppRobots = []  # 敌方机器人数组
@@ -69,41 +70,45 @@ def strategy(football_now_x, football_now_y):
         # 进攻！！！
         if race_state_trigger == Team.Self:
             # baseRobots[0].set_wheel_velocity(125,125)
-
-            # 首先直接盲目进攻！(速度应该是一样的？)
-            baseRobots[0].moveto(120, 0)
-            baseRobots[1].moveto(120, 0)
-            baseRobots[2].moveto(120, 0)
-
-            # todo 处理僵持
+            # todo 应该先处理信息而后操作
             opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
-            base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
-            distance = 12  # 距离过近的阈值
+            base_xy_info: List[Tuple[float, float]] = []  #
             # 保存x,y坐标
             save_xy(baseRobots, base_xy_info)
             save_xy(oppRobots, opp_xy_info)
 
+            # 若不在圈内，则要进入
+            for i in range(0, 3):
+                if not is_safe(base_xy_info[i]):
+                    baseRobots[i].moveto(120, random.randint(-20, 20))
+                else:
+                    baseRobots[i].moveto(666, random.randint(-20, 20))
+            # 处理僵持
+            # todo bug:一个被堵，剩下的也会拉扯
+            distance = 9  # 距离过近的阈值
             # 针对太近的机器人进行处理
             for i in range(len(base_xy_info)):
-                baseRobots[i].moveto(120, 0)
                 for j in range(len(opp_xy_info)):
+                    # 距离过近 处理逻辑
                     if is_distance_too_close(opp_xy_info[i], base_xy_info[j], distance):
-                        # 距离过近 处理逻辑
                         # print(f"自己家的机器人{i + 1}和对面机器人{j + 1}之间的距离过近！")     # 调试
-                        # 太近则换个位置(只有”i“是自家机器人)
-                        # baseRobots[i].set_wheel_velocity(-125, 0)
-                        opp_x = opp_xy_info[j][0]
-                        opp_y = opp_xy_info[j][1]
+                        opp_x = opp_xy_info[j][0]  # 该敌人x坐标
+                        opp_y = opp_xy_info[j][1]  # 该敌人y坐标
                         # baseRobots[i].moveto(opp_x + random.randint(0, 50), opp_y + 60 + random.randint(0, 20), 200)
 
                         # 如果己方在对面边界附近被卡住，则增加最大速度找机会到中间 todo 被堵死
-                        if 95 < opp_xy_info[i][0] < 110 or opp_xy_info[i][1] > 20 or opp_xy_info[i][1] < -20:
+                        # 右边界
+                        if is_right_border(base_xy_info[i]):
                             baseRobots[i].moveto(opp_xy_info[i][0], 0)
                         else:  # 避障
-                            baseRobots[i].moveto(opp_x + random.randint(0, 60), opp_y + random.randint(-90, 90))
+                            # print(i)
+                            # baseRobots[i].moveto(opp_x + random.randint(0, 20), opp_y + random.randint(-20, 20))
+                            baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
 
         # 防守！！！
         if race_state_trigger == Team.Opponent:
+            # todo 重点修改防守
+            # 先记录此时坐标
             opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
             base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
 
@@ -112,21 +117,40 @@ def strategy(football_now_x, football_now_y):
             save_xy(oppRobots, opp_xy_info)
 
             # todo 集群：3个打一个推到对方基地(假设只攻击距离最近的那一个)
-            # 距离最近，距离中心点最近（0，0）
-            opp_closest_robot = get_closest_robot(opp_xy_info)
+            # 距离最近，距离中心点最近(0，0):
+            #   修改 (-110,0),并且不能在内
+            opp_closest_robot_index = get_closest_robot(opp_xy_info)
             # 记录对方坐标
-            opp_x = opp_xy_info[opp_closest_robot][0]
-            opp_y = opp_xy_info[opp_closest_robot][1]
-            baseRobots[0].moveto(opp_x,
-                                 opp_y)
-
-            baseRobots[1].moveto(opp_x,
-                                 opp_y)
-
-            baseRobots[2].moveto(opp_x,
-                                 opp_y)
-
+            opp_x = opp_xy_info[opp_closest_robot_index][0]
+            opp_y = opp_xy_info[opp_closest_robot_index][1]
             # todo 数量限制（防止乌龙），一个死追，其它两个带预判
+            if opp_y > -110:  # 对方在外面
+                pass
+            else:  # 否则换目标
+                opp_closest_robot_index = (opp_closest_robot_index + 1) % 3
+                # 记录对方坐标
+                opp_x = opp_xy_info[opp_closest_robot_index][0]
+                opp_y = opp_xy_info[opp_closest_robot_index][1]
+
+            for i in range(0, 3):
+                if opp_x < base_xy_info[opp_closest_robot_index][0]:  # 对方想逃逸
+                    opp_x -= 10
+                if math.fabs(opp_y) < base_xy_info[opp_closest_robot_index][1]:
+                    opp_x -= 10
+                    opp_y *= 0.9
+
+                # todo 数量限制 对方到了边界
+                if is_left_border((opp_x, opp_y)):
+                    error_num = 0
+                    error_index_lists = []  # 错误机器人编号列表
+                    for j in range(0, 3):
+                        if math.fabs(base_xy_info[i][1]) > math.fabs(opp_y):
+                            error_num += 1
+                        if error_num > 1:
+                            error_index_lists.append(i)
+                    for j in error_index_lists:
+                        baseRobots[j].moveto(opp_x, opp_y * 0.9)
+                baseRobots[i].moveto(opp_x, opp_y)
 
     for i in range(0, 5):  # 保存信息
         # baseRobots[i].set_wheel_velocity(125, 125)
@@ -167,18 +191,18 @@ def get_placement(field: Field) -> List[Tuple[float, float, float]]:
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
         if race_state_trigger == Team.Self:
             print("进攻摆位")
-            set_pos = [[-100, 20, -30],
+            set_pos = [[-100, 20, 30],
                        [-120, 0, 0],
-                       [-100, -20, 30],
+                       [-100, -20, -30],
                        [0, 0, 0],
                        [0, 0, 0],
                        [0.0, 0.0, 0.0]]
 
         else:  # if race_state_trigger == Team.Opponent:
             print("防守摆位")
-            set_pos = [[0, 20, 0],
-                       [-20, 0, 0],
-                       [0, -20, 0],
+            set_pos = [[-100, 60, 0],
+                       [-80, 0, 0],
+                       [-100, -40, 0],
                        [0, 0, 0],
                        [0, 0, 0],
                        [0.0, 0.0, 0.0]]

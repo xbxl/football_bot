@@ -9,15 +9,15 @@ class GlobalVariable:
 
 
 # 计算到中心距离
-def get_distance(x, y, tar_x=0, tar_y=0):
-    distance = sqrt((x-tar_x) ** 2 + (y-tar_y) ** 2)
+def get_distance(x, y, tar_x=-110, tar_y=0):
+    distance = sqrt((x - tar_x) ** 2 + (y - tar_y) ** 2)
     return distance
 
 
 # 判断是否两个机器人太近了
 def is_distance_too_close(robot1, robot2, least_distance):
     temp = sqrt((robot1[0] - robot2[0]) ** 2 + (robot1[1] - robot2[1]) ** 2)
-    print(temp)
+    # print(temp)
     return temp < least_distance
 
 
@@ -41,3 +41,15 @@ def get_closest_robot(robot_xy_list):
 def save_xy(robot_list, robot_info_list):
     for i in range(0, 3):
         robot_info_list.append((robot_list[i].get_pos().x, robot_list[i].get_pos().y))
+
+
+# 右侧边界
+def is_right_border(temp):
+    return 105 < temp[0] < 110 and (temp[1] > 20 or temp[1] < -20)
+
+
+def is_left_border(temp):
+    return -110 < temp[0] < -105 and (temp[1] > 20 or temp[1] < -20)
+
+def is_safe(temp):
+    return temp[0] > 110
