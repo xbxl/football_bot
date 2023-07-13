@@ -126,8 +126,8 @@ class BaseRobot:
             v_r = -v_max + self.lastU
             v_l = -v_max - self.lastU
         else:
-            v_r = 80
-            v_l = -80
+            v_r = 125
+            v_l = -125
         self.set_wheel_velocity(v_l, v_r)
 
 

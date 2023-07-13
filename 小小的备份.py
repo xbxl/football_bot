@@ -1,7 +1,6 @@
 """
 这段代码实现了一个的策略开发框架
 """
-import operator
 import random
 from typing import Tuple, Union
 # from V5RPC import *
@@ -19,7 +18,6 @@ race_state_trigger = -1  # 触发方
 not_ok_dict = {}  # note 维护字典，防止决策重复
 right_border_dict = {}
 robot_killed_nums = {0: 0, 1: 0, 2: 0}
-init_tick = 0
 
 
 # 时间处理函数
@@ -73,87 +71,117 @@ def get_team_info(server_version: int) -> str:
 #   接收：当前球的x,y坐标
 #   作用：根据比赛状态(定位球状态+触发方)执行相应的策略
 def strategy(football_now_x, football_now_y, tick):
-    global not_ok_dict, right_border_dict, robot_killed_nums, init_tick
+    global not_ok_dict, right_border_dict, robot_killed_nums
 
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
         # 进攻！！！
         if race_state_trigger == Team.Self:
-            # 加速
-            # print(tick)
-            if init_tick < 25:
-                baseRobots[0].moveto(-50, 80)
-                baseRobots[1].moveto(-50, 70)
-                baseRobots[2].moveto(-50, -80)
-            elif init_tick < 70:
-                baseRobots[0].moveto(120, -20)
-                baseRobots[1].moveto(120, -20)
-                baseRobots[2].moveto(120, 20)
-            else:
-                # baseRobots[0].set_wheel_velocity(125,125)
-                opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
-                base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
-                # 保存x,y坐标
-                save_xy(baseRobots, base_xy_info)
-                save_xy(oppRobots, opp_xy_info)
+            # baseRobots[0].set_wheel_velocity(125,125)
+            opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
+            base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
+            # 保存x,y坐标
+            save_xy(baseRobots, base_xy_info)
+            save_xy(oppRobots, opp_xy_info)
 
-                # note 判断是否安全
-                for i in range(0, 3):
-                    if not is_safe(base_xy_info[i]):
-                        baseRobots[i].moveto(121, random.randint(-6, 6))
-                    else:
-                        # pass
-                        baseRobots[i].moveto(666, random.randint(-20, 20))  # note 随机数，为的是能进去对方基地
+            # 若不在圈内，则要进入
+            for i in range(0, 3):
+                if not is_safe(base_xy_info[i]):
+                    baseRobots[i].moveto(120, random.randint(-5, 5))
+                else:
+                    # pass
+                    baseRobots[i].moveto(120, random.randint(-5, 5))  # note 随机数，为的是能进去对方基地
 
-                # 维护列表
-                not_ok_dict = del_value_by_tick(not_ok_dict, init_tick - 2)  # 用来防堵
-                right_border_dict = del_value_by_tick(right_border_dict, init_tick - 2)
+            # 维护列表
+            not_ok_dict = del_value_by_tick(not_ok_dict, tick - 2)  # 用来防堵
+            right_border_dict = del_value_by_tick(right_border_dict, tick - 3)
 
-                # 处理僵持 note 必须要防止重复！
-                distance = 9  # 距离过近的阈值
-                for i in range(len(base_xy_info)):  # 遍历我方坐标
-                    for j in range(len(opp_xy_info)):  # 遍历地方坐标
-                        # 距离过近 处理逻辑
-                        if is_distance_too_close(opp_xy_info[i], base_xy_info[j], distance):
-                            # print(f"自己家的机器人{i + 1}和对面机器人{j + 1}之间的距离过近")     # 调试
-                            opp_x, opp_y = opp_xy_info[j][0], opp_xy_info[j][1]
-                            if is_safe(base_xy_info[i]):
-                                baseRobots[i].moveto(121, random.randint(-20, 20))
+            # 处理僵持 note 必须要防止重复！
+            distance = 30  # 距离过近的阈值
+            for i in range(len(base_xy_info)):  # 遍历我方坐标
+                for j in range(len(opp_xy_info)):  # 遍历地方坐标
+                    # 距离过近 处理逻辑
+                    if is_distance_too_close(opp_xy_info[i], base_xy_info[j], distance):
+                        # print(f"自己家的机器人{i + 1}和对面机器人{j + 1}之间的距离过近")     # 调试
+                        opp_x, opp_y = opp_xy_info[j][0], opp_xy_info[j][1]
+                        if is_safe(base_xy_info[i]):
+                            baseRobots[i].moveto(120, random.randint(-20, 20))
+                        # 右边界->则往中间靠
+                        elif is_right_border(base_xy_info[i]):  # note 己方是否在对方基地边界
+                            if i not in right_border_dict:
+                                right_border_dict[i] = tick  # 添加到字典
+                                baseRobots[i].moveto(opp_x, 0)
+                                # baseRobots[i].moveto(base_xy_info[i][0],
+                                #                      base_xy_info[i][1] + random.randint(-20, 20))
+                            else:
+                                pass
+                                # if robot_killed_nums[i] > 8:
+                                #     baseRobots[i].moveto(opp_x + random.randint(-20, 20),
+                                #                          opp_y + random.randint(-20, 20))
+                        else:
+                            # print(i)  # 调试
+                            # note 避障
+                            if i not in not_ok_dict:
+                                not_ok_dict[i] = tick
+                                # print(not_ok_dict)  # 调试
+                                robot_killed_nums[i] += 1
+                                # baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
+                                baseRobots[i].moveto(opp_x - 10, opp_y + random.randint(-50, 50))
 
-                            elif not is_right_border(base_xy_info[i]):  # note 避障
-                                # print(i)  # 调试
-                                if i not in not_ok_dict:
-                                    not_ok_dict[i] = init_tick
-                                    # print(not_ok_dict)  # 调试
-                                    robot_killed_nums[i] += 1
-                                    # baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
-                                    baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
-
-                            # 右边界->则往中间靠
-                            elif is_right_border(base_xy_info[i]):  # note 己方是否在对方基地边界
-                                if i not in right_border_dict:
-                                    right_border_dict[i] = init_tick  # 添加到字典
-                                    baseRobots[i].moveto(opp_x - 10, 0)
-                                    # baseRobots[i].moveto(base_xy_info[i][0],
-                                    #                      base_xy_info[i][1] + random.randint(-20, 20))
-                                else:
-                                    pass
-                                    # if robot_killed_nums[i] > 8:
-                                    #     baseRobots[i].moveto(opp_x + random.randint(-20, 20),
-                                    #                          opp_y + random.randint(-20, 20))
-                        # else:
-                        #     baseRobots[i].moveto(120, 0)
-
+                    # else:
+                    #     baseRobots[i].moveto(120, 0)
         # 防守！！！
         if race_state_trigger == Team.Opponent:
-            # 简单防守，1对1
-            # for i in range(0, 3):
-            #     baseRobots[i].moveto(oppRobots[i].get_pos().x, oppRobots[i].get_pos().y)
-            baseRobots[0].moveto(oppRobots[0].get_pos().x, oppRobots[0].get_pos().y)
-            baseRobots[1].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
-            baseRobots[2].moveto(oppRobots[2].get_pos().x, oppRobots[2].get_pos().y)
+            # note 1+2防守: 假设0 为外围 1，2内围
+            """
+            防守大区域为 (-110,-40) -> (-75,40)
+            防守小区域为 (-110,-25) -> (-94,25)
+            """
 
-        # 自己控制tick
-        init_tick += 1
+            # todo 重点修改防守
+            # 先记录此时坐标
+            opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
+            base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
+
+            # 保存x,y坐标
+            save_xy(baseRobots, base_xy_info)
+            save_xy(oppRobots, opp_xy_info)
+
+            # todo 集群：3个打一个推到对方基地(假设只攻击距离最近的那一个)
+            # 距离最近，距离中心点最近(0，0):
+            #   修改 (-110,0),并且不能在内
+            opp_closest_robot_index = get_closest_robot(opp_xy_info)
+            # 记录对方坐标
+            opp_x = opp_xy_info[opp_closest_robot_index][0]
+            opp_y = opp_xy_info[opp_closest_robot_index][1]
+            # todo 数量限制（防止乌龙），一个死追，其它两个带预判
+            if opp_y > -110:  # 对方在外面
+                pass
+            else:  # 否则换目标
+                opp_closest_robot_index = (opp_closest_robot_index + 1) % 3
+                # 记录对方坐标
+                opp_x = opp_xy_info[opp_closest_robot_index][0]
+                opp_y = opp_xy_info[opp_closest_robot_index][1]
+
+            for i in range(0, 3):
+                if opp_x < base_xy_info[opp_closest_robot_index][0]:  # 对方想逃逸
+                    opp_x -= 10
+                if math.fabs(opp_y) < base_xy_info[opp_closest_robot_index][1]:
+                    opp_x -= 10
+                    opp_y *= 0.9
+
+                # todo 数量限制 对方到了边界
+                if is_left_border((opp_x, opp_y)):
+                    error_num = 0
+                    error_index_lists = []  # 错误机器人编号列表
+                    for j in range(0, 3):
+                        if math.fabs(base_xy_info[i][1]) > math.fabs(opp_y):
+                            error_num += 1
+                        if error_num > 1:
+                            error_index_lists.append(i)
+                    for j in error_index_lists:
+                        baseRobots[j].moveto(opp_x, opp_y * 0.9)
+                baseRobots[i].moveto(opp_x, opp_y)
+
     for i in range(0, 5):  # 保存信息
         # baseRobots[i].set_wheel_velocity(125, 125)
         baseRobots[i].save_last_information(football_now_x, football_now_y)
@@ -190,15 +218,13 @@ def get_instruction(field: Field):
 #   返回：球的final location(无具体作用)
 @unbox_field
 def get_placement(field: Field) -> List[Tuple[float, float, float]]:
-    global init_tick
     final_set_pos: List[Union[Tuple[int, int, int], Tuple[float, float, float]]]
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
-        init_tick = 0
         if race_state_trigger == Team.Self:
             print("进攻摆位")
-            set_pos = [[-100, 20, 45],
-                       [-100, 0, 45],
-                       [-100, -20, -45],
+            set_pos = [[-100, 20, 30],
+                       [-120, 0, 0],
+                       [-100, -20, -30],
                        [0, 0, 0],
                        [0, 0, 0],
                        [0.0, 0.0, 0.0]]
@@ -206,8 +232,8 @@ def get_placement(field: Field) -> List[Tuple[float, float, float]]:
         else:  # if race_state_trigger == Team.Opponent:
             print("防守摆位")
             set_pos = [[-72.5, 0, 0],
-                       [-100, 60, 0],
-                       [-100, -40, 0],
+                       [-100, 20, 0],
+                       [-100, -20, 0],
                        [0, 0, 0],
                        [0, 0, 0],
                        [0.0, 0.0, 0.0]]

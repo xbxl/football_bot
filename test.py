@@ -4,7 +4,10 @@
 @File    ：test.py
 @IDE     ：PyCharm 
 @Author  ：xbxl
-@Date    ：2023/7/11 11:23 
+@Date    ：2023/7/12 15:23 
 """
-lists = [(10, 20), (20, 30)]
-print((10, 20) in lists)
+import time
+start = time.time()
+time.sleep(3)
+final = time.time()
+print(final - start)
