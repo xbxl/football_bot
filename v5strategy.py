@@ -18,6 +18,8 @@ race_state_trigger = -1  # 触发方
 # note 新增
 not_ok_dict = {}  # note 维护字典，防止决策重复
 right_border_dict = {}
+up_border_dict = {}
+down_border_dict = {}
 robot_killed_nums = {0: 0, 1: 0, 2: 0}
 init_tick = 0
 
@@ -73,11 +75,13 @@ def get_team_info(server_version: int) -> str:
 #   接收：当前球的x,y坐标
 #   作用：根据比赛状态(定位球状态+触发方)执行相应的策略
 def strategy(football_now_x, football_now_y, tick):
-    global not_ok_dict, right_border_dict, robot_killed_nums, init_tick
+    global not_ok_dict, right_border_dict, robot_killed_nums, init_tick, up_border_dict, down_border_dict
 
     if race_state == JudgeResultEvent.ResultType.PlaceKick:
         # 进攻！！！
         if race_state_trigger == Team.Self:
+            # baseRobots[0].moveto(120, 0)
+            # return
             # 加速
             # print(tick)
             if init_tick < 25:
@@ -105,8 +109,10 @@ def strategy(football_now_x, football_now_y, tick):
                         baseRobots[i].moveto(666, random.randint(-20, 20))  # note 随机数，为的是能进去对方基地
 
                 # 维护列表
-                not_ok_dict = del_value_by_tick(not_ok_dict, init_tick - 2)  # 用来防堵
-                right_border_dict = del_value_by_tick(right_border_dict, init_tick - 2)
+                not_ok_dict = del_value_by_tick(not_ok_dict, init_tick - 1)  # 用来防堵
+                right_border_dict = del_value_by_tick(right_border_dict, init_tick - 1)
+                up_border_dict = del_value_by_tick(up_border_dict, init_tick - 1)
+                down_border_dict = del_value_by_tick(down_border_dict, init_tick - 1)
 
                 # 处理僵持 note 必须要防止重复！
                 distance = 9  # 距离过近的阈值
@@ -116,7 +122,7 @@ def strategy(football_now_x, football_now_y, tick):
                         if is_distance_too_close(opp_xy_info[i], base_xy_info[j], distance):
                             # print(f"自己家的机器人{i + 1}和对面机器人{j + 1}之间的距离过近")     # 调试
                             opp_x, opp_y = opp_xy_info[j][0], opp_xy_info[j][1]
-                            if is_safe(base_xy_info[i]):
+                            if is_safe(base_xy_info[i]) or opp_x < base_xy_info[i][0]:
                                 baseRobots[i].moveto(121, random.randint(-20, 20))
 
                             elif not is_right_border(base_xy_info[i]):  # note 避障
@@ -126,20 +132,40 @@ def strategy(football_now_x, football_now_y, tick):
                                     # print(not_ok_dict)  # 调试
                                     robot_killed_nums[i] += 1
                                     # baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
-                                    baseRobots[i].moveto(opp_x, opp_y + random.randint(-20, 20))
+                                    baseRobots[i].moveto(base_xy_info[i][0] + 20, base_xy_info[i][1] - 20)
 
                             # 右边界->则往中间靠
                             elif is_right_border(base_xy_info[i]):  # note 己方是否在对方基地边界
                                 if i not in right_border_dict:
                                     right_border_dict[i] = init_tick  # 添加到字典
-                                    baseRobots[i].moveto(opp_x - 10, 0)
+                                    if base_xy_info[i][1] > opp_y:
+                                        baseRobots[i].moveto(opp_x - 20, opp_y - 20)
+                                else:
+                                    baseRobots[i].moveto(opp_x - 20, opp_y + 20)
+                                    # baseRobots[i].moveto(120, 0)
                                     # baseRobots[i].moveto(base_xy_info[i][0],
                                     #                      base_xy_info[i][1] + random.randint(-20, 20))
+                                # else:
+                                #     if robot_killed_nums[i] > 8:
+                                #         baseRobots[i].moveto(opp_x + random.randint(-40, 0), 0)
+
+                            # 上边界
+                            elif is_up_border(base_xy_info[i]):
+                                if i not in up_border_dict:
+                                    up_border_dict[i] = init_tick  # 添加到字典
+                                    if base_xy_info[i][1] > opp_y:
+                                        baseRobots[i].moveto(base_xy_info[i][0] - 20, base_xy_info[i][1])
                                 else:
-                                    pass
-                                    # if robot_killed_nums[i] > 8:
-                                    #     baseRobots[i].moveto(opp_x + random.randint(-20, 20),
-                                    #                          opp_y + random.randint(-20, 20))
+                                    baseRobots[i].moveto(120, 0)
+
+                            # 下边界
+                            elif is_down_border(base_xy_info[i]):
+                                if i not in down_border_dict:
+                                    down_border_dict[i] = init_tick  # 添加到字典
+                                    if base_xy_info[i][1] > opp_y:
+                                        baseRobots[i].moveto(base_xy_info[i][0] - 20, base_xy_info[i][1])
+                                else:
+                                    baseRobots[i].moveto(120, 0)
                         # else:
                         #     baseRobots[i].moveto(120, 0)
 
@@ -148,9 +174,16 @@ def strategy(football_now_x, football_now_y, tick):
             # 简单防守，1对1
             # for i in range(0, 3):
             #     baseRobots[i].moveto(oppRobots[i].get_pos().x, oppRobots[i].get_pos().y)
-            baseRobots[0].moveto(oppRobots[0].get_pos().x, oppRobots[0].get_pos().y)
-            baseRobots[1].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
-            baseRobots[2].moveto(oppRobots[2].get_pos().x, oppRobots[2].get_pos().y)
+            opp_xy_info: List[Tuple[float, float]] = []  # 敌方坐标列表
+            base_xy_info: List[Tuple[float, float]] = []  # 我方坐标列表
+            # 保存x,y坐标
+            save_xy(baseRobots, base_xy_info)
+            save_xy(oppRobots, opp_xy_info)
+
+            if init_tick > 10:
+                baseRobots[0].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
+                baseRobots[1].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
+                baseRobots[2].moveto(oppRobots[1].get_pos().x, oppRobots[1].get_pos().y)
 
         # 自己控制tick
         init_tick += 1
@@ -205,9 +238,9 @@ def get_placement(field: Field) -> List[Tuple[float, float, float]]:
 
         else:  # if race_state_trigger == Team.Opponent:
             print("防守摆位")
-            set_pos = [[-72.5, 0, 0],
-                       [-100, 60, 0],
-                       [-100, -40, 0],
+            set_pos = [[-80, -3.5, 0],
+                       [-80, 3.5, 0],
+                       [-10, -80, -90],
                        [0, 0, 0],
                        [0, 0, 0],
                        [0.0, 0.0, 0.0]]

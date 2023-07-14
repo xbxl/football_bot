@@ -52,6 +52,16 @@ def is_left_border(temp):
     return -110 < temp[0] < -105 and (temp[1] > 20 or temp[1] < -20)
 
 
+# 上边界
+def is_up_border(temp):
+    return temp > 75
+
+
+# 下边界
+def is_down_border(temp):
+    return temp < 75
+
+
 def is_safe(temp):
     return temp[0] > 110
 
